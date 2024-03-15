@@ -694,6 +694,7 @@ function _Chat() {
   const [inputRows, setInputRows] = useState(2);
   const measure = useDebouncedCallback(
     () => {
+      // TODO: Handle autoGrowTextArea not returning a number
       const rows = inputRef.current ? autoGrowTextArea(inputRef.current) : 1;
       const inputRows = Math.min(
         20,
@@ -1100,11 +1101,13 @@ function _Chat() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-  
+
   const handlePaste = useCallback(
     async (event: React.ClipboardEvent<HTMLTextAreaElement>) => {
       const currentModel = chatStore.currentSession().mask.modelConfig.model;
-      if(!isVisionModel(currentModel)){return;}
+      if (!isVisionModel(currentModel)) {
+        return;
+      }
       const items = (event.clipboardData || window.clipboardData).items;
       for (const item of items) {
         if (item.kind === "file" && item.type.startsWith("image/")) {
@@ -1161,11 +1164,15 @@ function _Chat() {
             const file = event.target.files[i];
             compressImage(file, 256 * 1024)
               .then((dataUrl) => {
-                imagesData.push(dataUrl);
                 if (
                   imagesData.length === 3 ||
-                  imagesData.length === files.length
+                  imagesData.length === files.length ||
+                  images.includes(dataUrl)
                 ) {
+                  setUploading(false);
+                  res(imagesData);
+                } else {
+                  imagesData.push(dataUrl);
                   setUploading(false);
                   res(imagesData);
                 }
